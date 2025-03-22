@@ -1,9 +1,11 @@
 import { useState } from "react";
+import NavBar from "../components/navBar";
 
 function HeroPage() {
   const [count, setCount] = useState(0);
   return (
     <>
+      <NavBar />
       <div>
         <a href="https://vite.dev" target="_blank"></a>
         <a href="https://react.dev" target="_blank"></a>
