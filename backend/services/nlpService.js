@@ -1,9 +1,9 @@
 import natural from 'natural';
-import { pipeline } from '@xenova/transformers';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import logger from '../utils/logger.js';
 
+// Initialize NLP tools
 const tokenizer = new natural.WordTokenizer();
 const TfIdf = natural.TfIdf;
 
@@ -13,7 +13,7 @@ const TfIdf = natural.TfIdf;
  * @param {string} userQuery - Optional query to filter content
  * @param {boolean} isFilePath - Whether input is a file path
  * @param {Object} options - Additional generation options
- * @returns {Array} Array of flashcard objects
+ * @returns {Object} Object containing flashcards and metadata
  */
 export async function generateFlashcardsFromDocument(input, userQuery = '', isFilePath = false, options = {}) {
   try {
@@ -126,9 +126,9 @@ export async function generateFlashcardsFromDocument(input, userQuery = '', isFi
       return { flashcards, metadata };
     }
     
-    return flashcards;
+    return { flashcards };
   } catch (error) {
-    console.error('Error generating flashcards:', error);
+    logger.error(`Error generating flashcards: ${error.message}`);
     throw error;
   }
 }
@@ -204,4 +204,16 @@ function generateTags(content) {
   });
   
   return tags;
+}
+
+/**
+ * Enhanced generation with advanced NLP (can be implemented with additional libraries)
+ * @param {string} content - Text content
+ * @returns {Object} Enhanced flashcard set
+ */
+export async function enhancedFlashcardGeneration(content) {
+  // This could be expanded with more advanced NLP techniques
+  // like using transformers for better question generation
+  logger.info('Using enhanced NLP for flashcard generation');
+  return generateFlashcardsFromDocument(content);
 }
