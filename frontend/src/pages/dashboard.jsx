@@ -1,8 +1,54 @@
-import React, { useState } from 'react';
-import { Calendar, CheckSquare, Book, Clock, Home, Settings, BarChart, BookOpen, Users, Search } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Clock, Search, BookOpen, CheckSquare, LogOut, User } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
+import Sidebar from '../components/sidebar';
 
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('home');
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const profileMenuRef = useRef(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check for authentication
+    const token = localStorage.getItem('userToken');
+    const storedUserData = localStorage.getItem('userData');
+
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    if (storedUserData) {
+      setUserData(JSON.parse(storedUserData));
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleSignOut = () => {
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('userData');
+    navigate('/login');
+  };
+
+  // Get user initials for avatar
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name.split(' ').map(word => word[0]).join('').toUpperCase();
+  };
 
   // Sample data
   const upcomingDeadlines = [
@@ -27,7 +73,7 @@ const StudentDashboard = () => {
     switch(page) {
       case 'flashcards':
         return (
-          <div className="border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center shadow-sm hover:shadow-md transition-shadow cursor-pointer h-48">
+          <div onClick={() => navigate("/flashcards")} className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center shadow-sm hover:shadow-md transition-shadow cursor-pointer h-48">
             <div className="mb-2">
               <BookOpen size={32} className="text-blue-600" />
             </div>
@@ -39,25 +85,13 @@ const StudentDashboard = () => {
         );
       case 'tasks':
         return (
-          <div className="border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer h-48">
+          <div onClick={() => navigate("/todo")} className="border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer h-48">
             <div className="mb-2">
               <CheckSquare size={32} className="text-green-600" />
             </div>
             <h3 className="text-lg font-medium">Task Manager</h3>
             <p className="text-sm text-gray-500 mt-2 text-center">
               Organize upcoming, ongoing, and completed tasks to stay on track
-            </p>
-          </div>
-        );
-      case 'materials':
-        return (
-          <div className="border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer h-48">
-            <div className="mb-2">
-              <Book size={32} className="text-purple-600" />
-            </div>
-            <h3 className="text-lg font-medium">Learning Materials</h3>
-            <p className="text-sm text-gray-500 mt-2 text-center">
-              Access course materials sorted by difficulty and relevance to exams
             </p>
           </div>
         );
@@ -68,51 +102,8 @@ const StudentDashboard = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Navigation Sidebar */}
-      <div className="flex h-screen">
-        <div className="w-16 md:w-64 bg-white border-r border-gray-200 flex flex-col">
-          <div className="p-4 border-b border-gray-200">
-            <h1 className="text-xl font-bold hidden md:block">StudyHub</h1>
-            <div className="md:hidden flex justify-center">
-              <BookOpen size={24} />
-            </div>
-          </div>
-          
-          <nav className="flex-1 pt-4">
-            <ul>
-              {[
-                { id: 'home', icon: Home, label: 'Dashboard' },
-                { id: 'tasks', icon: CheckSquare, label: 'Tasks' },
-                { id: 'flashcards', icon: Book, label: 'Flashcards' },
-                { id: 'materials', icon: BookOpen, label: 'Materials' },
-                { id: 'calendar', icon: Calendar, label: 'Calendar' },
-                { id: 'analytics', icon: BarChart, label: 'Analytics' },
-                { id: 'study-groups', icon: Users, label: 'Study Groups' }
-              ].map(item => (
-                <li key={item.id} className="mb-1">
-                  <button
-                    onClick={() => setActiveTab(item.id)}
-                    className={`flex items-center py-2 px-4 w-full ${
-                      activeTab === item.id 
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <item.icon size={20} className="flex-shrink-0" />
-                    <span className="ml-3 hidden md:block">{item.label}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
-          
-          <div className="p-4 border-t border-gray-200">
-            <button className="flex items-center py-2 text-gray-600 hover:text-gray-900 w-full">
-              <Settings size={20} />
-              <span className="ml-3 hidden md:block">Settings</span>
-            </button>
-          </div>
-        </div>
+      <div className="flex">
+        <Sidebar />
         
         {/* Main Content */}
         <div className="flex-1 overflow-auto">
@@ -130,8 +121,39 @@ const StudentDashboard = () => {
                 <Search size={16} className="absolute left-3 top-3 text-gray-400" />
               </div>
               
-              <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center">
-                <span>JS</span>
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition-colors"
+                >
+                  <span>{userData ? getInitials(userData.name) : 'U'}</span>
+                </button>
+
+                {/* Profile Dropdown Menu */}
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
+                    <div className="px-4 py-2 border-b border-gray-200">
+                      <p className="text-sm font-medium text-gray-900">{userData?.name}</p>
+                      <p className="text-sm text-gray-500">{userData?.email}</p>
+                    </div>
+                    <div className="py-1">
+                      <button
+                        onClick={() => {/* Add profile page navigation here */}}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        Profile
+                      </button>
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign out
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </header>
@@ -142,10 +164,9 @@ const StudentDashboard = () => {
               <>
                 <div className="mb-8">
                   <h3 className="text-lg font-medium mb-4">Quick Access</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {renderPagePreview('flashcards')}
                     {renderPagePreview('tasks')}
-                    {renderPagePreview('materials')}
                   </div>
                 </div>
                 
@@ -169,11 +190,11 @@ const StudentDashboard = () => {
                     </ul>
                   </div>
                   
-                  {/* Recommended Study Sessions */}
+                  {/* Study Sessions */}
                   <div className="bg-white rounded-lg shadow p-4">
                     <div className="flex items-center mb-4">
-                      <Book size={20} className="text-blue-500 mr-2" />
-                      <h3 className="font-medium">Recommended Study</h3>
+                      <Clock size={20} className="text-blue-500 mr-2" />
+                      <h3 className="font-medium">Study Sessions</h3>
                     </div>
                     <ul className="space-y-3">
                       {studySessions.map(item => (
@@ -191,7 +212,7 @@ const StudentDashboard = () => {
                   {/* Exam Preparation */}
                   <div className="bg-white rounded-lg shadow p-4">
                     <div className="flex items-center mb-4">
-                      <Calendar size={20} className="text-purple-500 mr-2" />
+                      <Clock size={20} className="text-purple-500 mr-2" />
                       <h3 className="font-medium">Exam Preparation</h3>
                     </div>
                     <ul className="space-y-3">

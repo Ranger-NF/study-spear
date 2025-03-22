@@ -78,10 +78,10 @@ const Header = () => {
             </div>
           </div>
           <div className="flex gap-8 font-['Poppins']">
-            <a className="text-black no-underline text-base opacity-80 transition-all hover:opacity-100 hover:text-[#0c81f6] font-['Poppins']">
+            <a href="/register" className="text-black no-underline text-base opacity-80 transition-all hover:opacity-100 hover:text-[#0c81f6] font-['Poppins']">
               Register
             </a>
-            <Link to="/" className={`text-black `}>
+            <Link to="/login" className={`text-black `}>
               Login
             </Link>
           </div>

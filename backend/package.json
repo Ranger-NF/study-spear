@@ -3,6 +3,7 @@
     "version": "1.0.0",
     "description": "Dynamic Flashcard Generator",
     "main": "app.js",
+    "type": "module",
     "scripts": {
         "start": "node app.js"
     },
@@ -19,5 +20,8 @@
         "mongoose": "^7.6.3",
         "morgan": "^1.10.0",
         "natural": "^6.5.0"
-    }
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
 }
