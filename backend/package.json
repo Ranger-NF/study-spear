@@ -1,5 +1,26 @@
 {
+<<<<<<< HEAD
   "dependencies": {
     "express": "^4.21.2"
   }
+=======
+    "name": "flashcard-generator",
+    "version": "1.0.0",
+    "description": "Dynamic Flashcard Generator",
+    "main": "app.js",
+    "scripts": {
+        "start": "node app.js"
+    },
+    "dependencies": {
+        "@xenova/transformers": "^2.5.0",
+        "cors": "^2.8.5",
+        "dotenv": "^10.0.0",
+        "express": "^4.17.1",
+        "flashcard-generator": "file:",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^7.6.3",
+        "morgan": "^1.10.0",
+        "natural": "^6.5.0"
+    }
+>>>>>>> ccec7cae4851ad99e71996ab6b8adf67fd8f79fb
 }
