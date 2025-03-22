@@ -6,6 +6,7 @@ import App from "./App.jsx";
 import HeroPage from "./pages/heroPage.jsx";
 import FlashcardPage from "./pages/flashCardPage.jsx";
 import TodoPage from "./components/todo.jsx";
+import DashboardPage from "./pages/dashboard.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -14,6 +15,7 @@ createRoot(document.getElementById("root")).render(
         <Route path="/" element={<HeroPage />} />
         <Route path="/flashcards" element={<FlashcardPage />} />
         <Route path="/todo" element={<TodoPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,
