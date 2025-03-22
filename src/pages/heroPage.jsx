@@ -1,29 +1,23 @@
-import { useState } from "react";
-import NavBar from "../components/navBar";
 
-function HeroPage() {
-  const [count, setCount] = useState(0);
+const HeroPage = () => {
+
   return (
-    <>
-      <NavBar />
-      <div>
-        <a href="https://vite.dev" target="_blank"></a>
-        <a href="https://react.dev" target="_blank"></a>
+    <div
+      className="min-h-screen mx-4 md:m-10"
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="grid justify-center grid-cols-2">
+          <div>
+            <h1>Study Spear</h1>
+            <p>AI Assistant</p>
+          </div>
+          <p>Image</p>
+        </div>
+
+
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </div>
   );
-}
+};
 
 export default HeroPage;

@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Background -->
+  <rect width="100" height="100" fill="#FFFFFF"/> <!-- Light background -->
+
+  <!-- Grid Pattern Definition -->
+  <defs>
+    <pattern id="grid" width="25" height="25" patternUnits="userSpaceOnUse">
+      <!-- Horizontal line - only on top edge -->
+      <path d="M 0 0 H 25" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="1"/> <!-- Dark grid lines -->
+      <!-- Vertical line - only on left edge -->
+      <path d="M 0 0 V 25" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="1"/> <!-- Dark grid lines -->
+    </pattern>
+  </defs>
+
+  <!-- Apply pattern -->
+  <rect width="100%" height="100%" fill="url(#grid)"/>
+</svg>
