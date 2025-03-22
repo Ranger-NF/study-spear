@@ -44,7 +44,7 @@ const Header = () => {
         <div className="flex justify-between items-center p-2.5">
           <div className="flex items-center ml-2.5">
             <div className="flex flex-col justify-center">
-              <h1 className="m-0 text-base font-bold">Study Spear</h1>
+              <h3 className="m-0 font-bold text-sm">Study Spear</h3>
             </div>
           </div>
           <button

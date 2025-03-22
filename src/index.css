@@ -27,3 +27,12 @@ ul {
 code {
     @apply font-mono text-sm px-1 py-0.5 bg-gray-100 rounded;
 }
+
+
+
+
+/* flashcards */
+.full-height {
+    width: 100vw; /* Full width of the viewport */
+    height: calc(100vh - 120px); /* Subtract navbar height */
+}
