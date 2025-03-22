@@ -7,6 +7,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const onboardAnswerRoutes = require('./routes/onboard');
 const logger = require('./utils/logger');
+const todoRoutes = require('./routes/todoRoutes');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(logger);
 // app.use('/api/flashcards', flashcardRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/onboarding', onboardAnswerRoutes);
+app.use('/api/todos', todoRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
