@@ -1,11 +1,54 @@
-import React, { useState } from 'react';
-import { Clock, Search, BookOpen, CheckSquare } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Clock, Search, BookOpen, CheckSquare, LogOut, User } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import Sidebar from '../components/sidebar';
 
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('home');
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const profileMenuRef = useRef(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check for authentication
+    const token = localStorage.getItem('userToken');
+    const storedUserData = localStorage.getItem('userData');
+
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    if (storedUserData) {
+      setUserData(JSON.parse(storedUserData));
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleSignOut = () => {
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('userData');
+    navigate('/login');
+  };
+
+  // Get user initials for avatar
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    return name.split(' ').map(word => word[0]).join('').toUpperCase();
+  };
 
   // Sample data
   const upcomingDeadlines = [
@@ -78,8 +121,39 @@ const StudentDashboard = () => {
                 <Search size={16} className="absolute left-3 top-3 text-gray-400" />
               </div>
               
-              <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center">
-                <span>JS</span>
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 transition-colors"
+                >
+                  <span>{userData ? getInitials(userData.name) : 'U'}</span>
+                </button>
+
+                {/* Profile Dropdown Menu */}
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-200">
+                    <div className="px-4 py-2 border-b border-gray-200">
+                      <p className="text-sm font-medium text-gray-900">{userData?.name}</p>
+                      <p className="text-sm text-gray-500">{userData?.email}</p>
+                    </div>
+                    <div className="py-1">
+                      <button
+                        onClick={() => {/* Add profile page navigation here */}}
+                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        Profile
+                      </button>
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign out
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </header>

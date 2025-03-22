@@ -47,7 +47,7 @@ const Sidebar = () => {
   return (
     <div className="w-16 md:w-64 bg-white border-r border-gray-200 flex flex-col h-screen">
       <div className="p-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold hidden md:block">StudyHub</h1>
+        <h1 className="text-xl font-bold hidden md:block">StudySpear</h1>
         <div className="md:hidden flex justify-center">
           <BookOpen size={24} />
         </div>
