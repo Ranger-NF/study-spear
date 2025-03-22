@@ -1,0 +1,37 @@
+{
+    "onboarding": [
+        {
+            "question": "What time of day are you most productive?",
+            "type": 0, 
+            "options": [
+                "Morning",
+                "Afternoon",
+                "Evening",
+                "Midnight",
+                "No particular time"
+            ]
+        },
+        {
+            "question": "When do you feel least productive or most tired?",
+            "type":0,
+            "options": [
+                "Morning",
+                "Afternoon",
+                "Evening",
+                "Midnight",
+                "No particular time"
+            ]
+        }, {
+            "question": "Do you prefer to work in short bursts (e.g., Pomodoro technique) or longer, uninterrupted blocks?",
+            "type":0,
+            "options": [
+                "Short quick sessions",
+                "Long deep work",
+                "It varies"
+            ]
+        }, {
+            "question": "Do you have any health or energy constraints I should consider?",
+            "type": 1
+        }
+    ]
+}
