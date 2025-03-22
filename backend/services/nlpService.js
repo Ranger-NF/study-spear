@@ -1,23 +1,20 @@
-Copy
-const natural = require('natural');
-const { pipeline } = require('@xenova/transformers');
+import natural from 'natural';
+import { pipeline } from '@xenova/transformers';
 
 const tokenizer = new natural.WordTokenizer();
 
-async function generateFlashcards(text) {
-  const words = tokenizer.tokenize(text);
-  // Implement NER and POS tagging logic here
-
-  const qaPipeline = await pipeline('question-generation');
-  const questions = await qaPipeline(text);
-
-  // Combine questions and answers into flashcards
-  const flashcards = questions.map(q => ({
-    question: q.question,
-    answer: q.answer,
-  }));
-
-  return flashcards;
-}
-
-module.exports = { generateFlashcards };
+export async function generateFlashcards(text) {
+  try {
+    const words = tokenizer.tokenize(text);
+    // Basic implementation - create a flashcard for each sentence
+    const sentences = text.split(/[.!?]+/).filter(s => s.trim());
+    
+    return sentences.map(sentence => ({
+      question: sentence.trim() + '?',
+      answer: sentence.trim()
+    }));
+  } catch (error) {
+    console.error('Error generating flashcards:', error);
+    throw error;
+  }
+} 
