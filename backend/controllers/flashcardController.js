@@ -89,7 +89,7 @@ export const getFlashcardSets = async (req, res) => {
     }
     
     const flashcardSets = await Flashcard.find(query)
-      .select('title description createdAt tags studyStats aiGenerated')
+      .select('title description createdAt tags studyStats flashcards aiGenerated')
       .sort({ createdAt: -1 });
     
     res.status(200).json({

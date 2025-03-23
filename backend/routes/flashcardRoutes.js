@@ -10,6 +10,7 @@ import {
   updateCardStats,
   upload
 } from '../controllers/flashcardController.js';
+import { generateFlashcardsFromDocument } from '../services/nlpService.js';
 
 // All routes require authentication
 router.use(authenticateToken);
@@ -23,6 +24,7 @@ router.get('/:id', getFlashcardSet);
 router.put('/:id', updateFlashcardSet);
 router.delete('/:id', deleteFlashcardSet);
 
+router.post('/generate-from-pdf', upload.single('file'), generateFlashcardsFromDocument);
 // Card statistics
 router.post('/:id/cards/:cardId/stats', updateCardStats);
 
