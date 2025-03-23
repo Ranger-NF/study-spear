@@ -1,24 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, CheckSquare, Book, Clock, Home, Settings, BarChart, BookOpen, Users, CloudLightning, Brain, PersonStanding, Heart } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  Calendar,
+  CheckSquare,
+  Book,
+  Clock,
+  Home,
+  Settings,
+  BarChart,
+  BookOpen,
+  Users,
+  CloudLightning,
+  Brain,
+  PersonStanding,
+  Heart,
+} from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 
 const Sidebar = () => {
-  const [activeTab, setActiveTab] = useState('home');
+  const [activeTab, setActiveTab] = useState("home");
   const navigate = useNavigate();
   const location = useLocation();
 
   // Update activeTab based on current path
   useEffect(() => {
     const path = location.pathname;
-    switch(path) {
-      case '/dashboard':
-        setActiveTab('home');
+    switch (path) {
+      case "/dashboard":
+        setActiveTab("home");
         break;
-      case '/todo':
-        setActiveTab('tasks');
+      case "/todo":
+        setActiveTab("tasks");
         break;
-      case '/flashcards':
-        setActiveTab('flashcards');
+      case "/flashcards":
+        setActiveTab("flashcards");
         break;
       // Add other cases as needed
       default:
@@ -28,15 +42,15 @@ const Sidebar = () => {
 
   const handleTabClick = (id) => {
     setActiveTab(id);
-    switch(id) {
-      case 'home':
-        navigate('/dashboard');
+    switch (id) {
+      case "home":
+        navigate("/dashboard");
         break;
-      case 'tasks':
-        navigate('/todo');
+      case "tasks":
+        navigate("/todo");
         break;
-      case 'flashcards':
-        navigate('/flashcards');
+      case "flashcards":
+        navigate("/flashcards");
         break;
       // Add other navigation cases as needed
       default:
@@ -52,25 +66,21 @@ const Sidebar = () => {
           <BookOpen size={24} />
         </div>
       </div>
-      
+
       <nav className="flex-1 pt-4">
         <ul>
           {[
-            { id: 'home', icon: Home, label: 'Dashboard' },
-            { id: 'tasks', icon: CloudLightning, label: 'Energy Manager' },
-            { id: 'flashcards', icon: Brain, label: 'Memorizers' },
-            // { id: 'materials', icon: BookOpen, label: 'Materials' },
-            // { id: 'calendar', icon: Calendar, label: 'Calendar' },
-            // { id: 'analytics', icon: BarChart, label: 'Analytics' },
-            // { id: 'study-groups', icon: Users, label: 'Study Groups' }
-          ].map(item => (
+            { id: "home", icon: Home, label: "Dashboard" },
+            { id: "tasks", icon: CloudLightning, label: "Energy Manager" },
+            { id: "flashcards", icon: Brain, label: "Memorizers" },
+          ].map((item) => (
             <li key={item.id} className="mb-1">
               <button
                 onClick={() => handleTabClick(item.id)}
                 className={`flex items-center py-2 px-4 w-full ${
-                  activeTab === item.id 
-                    ? 'bg-blue-50 text-blue-600'
-                    : 'text-gray-600 hover:bg-gray-50'
+                  activeTab === item.id
+                    ? "bg-blue-50 text-blue-600"
+                    : "text-gray-600 hover:bg-gray-50"
                 }`}
               >
                 <item.icon size={20} className="flex-shrink-0" />
@@ -80,7 +90,7 @@ const Sidebar = () => {
           ))}
         </ul>
       </nav>
-      
+
       <div className="p-4 border-t border-gray-200">
         <button className="flex items-center py-2 gap-2 text-gray-600 hover:text-gray-900 w-full">
           <span className="ml-3 hidden md:block">Made by Exeperia</span>
@@ -92,4 +102,4 @@ const Sidebar = () => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;
