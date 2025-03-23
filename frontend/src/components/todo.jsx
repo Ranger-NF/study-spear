@@ -251,7 +251,7 @@ const TodoPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-      </div>
+                  </div>
     );
   }
 
@@ -270,7 +270,7 @@ const TodoPage = () => {
               {error && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-md">
                   {error}
-                </div>
+              </div>
               )}
 
               {/* Tasks List Grouped by Period */}
@@ -288,10 +288,10 @@ const TodoPage = () => {
                         <div>
                           <h2 className="font-semibold text-lg">{periodInfo.label}</h2>
                           <p className="text-sm text-gray-600">{periodInfo.description}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-3">
+                </div>
+              </div>
+              
+              <div className="space-y-3">
                         {periodTasks.map((task) => (
                           <div 
                             key={task._id} 
@@ -330,10 +330,10 @@ const TodoPage = () => {
                                 )}
                               </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
                   );
                 })}
 
