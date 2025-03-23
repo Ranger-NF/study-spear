@@ -12,21 +12,21 @@ const api = axios.create({
 
 // Flashcard API endpoints
 const flashcardAPI = {
-  getAll: () => api.get('/api/flashcards'),
-  getById: (id) => api.get(`/api/flashcards/${id}`),
+  getAll: () => api.get('/flashcards'),
+  getById: (id) => api.get(`/flashcards/${id}`),
   create: (data) => {
     console.log('Creating flashcard with data:', data); // Debug log
-    return api.post('/api/flashcards', data);
+    return api.post('/flashcards', data);
   },
-  update: (id, data) => api.put(`/api/flashcards/${id}`, data),
-  delete: (id) => api.delete(`/api/flashcards/${id}`),
+  update: (id, data) => api.put(`/flashcards/${id}`, data),
+  delete: (id) => api.delete(`/flashcards/${id}`),
   createFromFile: async (file, options) => {
     const formData = new FormData();
-    formData.append('document', file);
+    formData.append('file', file);
     formData.append('options', JSON.stringify(options));
     
     console.log('Creating flashcards from file:', file.name, options);
-    return api.post('/api/flashcards/generate', formData, {
+    return api.post('/flashcards/generate-from-pdf', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -177,6 +177,7 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }) => {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState('');
   const [difficulty, setDifficulty] = useState('medium');
+  const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -187,7 +188,7 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }) => {
 
     try {
       setLoading(true);
-      setProgress('Processing PDF file...');
+      setProgress('Uploading PDF file...');
 
       // Create options for NLP processing
       const options = {
@@ -196,30 +197,45 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }) => {
         type: 'pdf',
         createdAt: new Date().toISOString(),
         source: 'file-upload',
-        maxCards: 20 // You can make this configurable
+        maxCards: 20
       };
+
+      console.log('Uploading file:', selectedFile.name);
+      console.log('With options:', options);
 
       // Call the NLP service to generate flashcards
       const response = await flashcardAPI.createFromFile(selectedFile, options);
-      console.log('Flashcards generated:', response.data);
+      console.log('Server response:', response.data);
 
-      // Create the new file record
+      if (!response.data) {
+        throw new Error('No data received from server');
+      }
+
+      // Create the new file record with the response data
       const newFile = {
         id: Date.now(),
         name: fileName.trim(),
         type: 'pdf',
-        flashcards: response.data.flashcards || []
+        flashcards: response.data.flashcards || [],
+        fileId: response.data.fileId // If server returns a fileId
       };
 
+      console.log('Created new file record:', newFile);
+
+      // Update both files and flashcards
       onUpload(newFile);
       onClose();
+
+      // Reset form
       setSelectedFile(null);
       setFileName('');
       setProgress('');
       
     } catch (error) {
       console.error('Error processing file:', error);
-      alert('Failed to process file: ' + (error.response?.data?.message || error.message));
+      const errorMessage = error.response?.data?.message || error.message;
+      setError(`Failed to process file: ${errorMessage}`);
+      alert(`Failed to process file: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -260,6 +276,12 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }) => {
               </p>
             )}
           </div>
+
+          {error && (
+            <div className="mb-4 p-2 bg-red-100 text-red-600 rounded">
+              {error}
+            </div>
+          )}
 
           <div className="mb-4">
             <label className="block text-gray-700 mb-2">Difficulty Level:</label>

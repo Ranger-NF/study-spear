@@ -17,6 +17,11 @@ const TfIdf = natural.TfIdf;
  */
 export async function generateFlashcardsFromDocument(input, userQuery = '', isFilePath = false, options = {}) {
   try {
+    // Input validation
+    if (!input) {
+      throw new Error('No input provided to generate flashcards');
+    }
+
     // Default options
     const config = {
       maxCards: options.maxCards || 20,
@@ -28,11 +33,27 @@ export async function generateFlashcardsFromDocument(input, userQuery = '', isFi
     // Get text content
     let fileContent;
     if (isFilePath) {
-      fileContent = fs.readFileSync(input, 'utf8');
+      try {
+        fileContent = fs.readFileSync(input, 'utf8');
+      } catch (error) {
+        logger.error('Error reading file:', error);
+        throw new Error('Could not read input file');
+      }
     } else {
-      fileContent = input; // Use the text directly
+      fileContent = input.toString(); // Convert input to string to ensure it's text
     }
-    
+
+    // Validate content
+    if (!fileContent || typeof fileContent !== 'string') {
+      throw new Error('Invalid content provided');
+    }
+
+    // Clean the content before processing
+    fileContent = fileContent.trim();
+    if (fileContent.length === 0) {
+      throw new Error('Empty content provided');
+    }
+
     // Process text into sentences
     const sentences = fileContent.split(/[.!?]+/).filter(s => s.trim());
     
@@ -128,7 +149,7 @@ export async function generateFlashcardsFromDocument(input, userQuery = '', isFi
     
     return { flashcards };
   } catch (error) {
-    logger.error(`Error generating flashcards: ${error.message}`);
+    logger.error('Error generating flashcards:', error);
     throw error;
   }
 }
