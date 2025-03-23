@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Sidebar from '../components/sidebar';
 
 const StudentDashboard = () => {
-  const [activeTab, setActiveTab] = useState('home');
+  const activeTab = 'home';
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [userData, setUserData] = useState(null);
   const profileMenuRef = useRef(null);
@@ -73,7 +73,7 @@ const StudentDashboard = () => {
     switch(page) {
       case 'flashcards':
         return (
-          <div onClick={() => navigate("/flashcards")} className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center shadow-sm hover:shadow-md transition-shadow cursor-pointer h-48">
+          <div onClick={() => navigate("/frontend/src/pages/flashCardFiles.jsx")} className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center shadow-sm hover:shadow-md transition-shadow cursor-pointer h-48">
             <div className="mb-2">
               <BookOpen size={32} className="text-blue-600" />
             </div>
