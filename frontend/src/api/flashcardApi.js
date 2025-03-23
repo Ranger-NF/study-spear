@@ -60,16 +60,6 @@ class FlashcardApi {
     );
   }
 
-  /**
-   * Authentication Methods
-   */
-  
-  // Login user and store token
- 
-
-  /**
-   * Flashcard Set Methods
-   */
   
   // Get all flashcard sets with optional public inclusion
   async getFlashcardSets(includePublic = true) {

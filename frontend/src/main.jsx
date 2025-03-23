@@ -4,7 +4,7 @@ import "./index.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import App from "./App.jsx";
 import HeroPage from "./pages/heroPage.jsx";
-import FlashcardPage from "./pages/flashCardPage.jsx";
+import FlashcardLearningPlatform from "./pages/flashCardFiles.jsx";
 import TodoPage from "./components/todo.jsx";
 import DashboardPage from "./pages/dashboard.jsx";
 import LoginPage from "./pages/loginPage.jsx";
@@ -19,7 +19,7 @@ createRoot(document.getElementById("root")).render(
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
-        <Route path="/flashcards" element={<FlashcardPage />} />
+        <Route path="/flashcards" element={<FlashcardLearningPlatform/>} />
         <Route path="/todo" element={<TodoPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
       </Routes>

@@ -2,31 +2,52 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/sidebar';
 
-// Create API service
-const API_URL = 'http://localhost:5000/api';
-
 const api = axios.create({
-  baseURL: API_URL,
-  withCredentials: true,
+  baseURL: import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:5000/api',
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
 // Flashcard API endpoints
 const flashcardAPI = {
-  getAll: () => api.get('/flashcards'),
-  getById: (id) => api.get(`/flashcards/${id}`),
-  create: (data) => api.post('/flashcards', data),
-  update: (id, data) => api.put(`/flashcards/${id}`, data),
-  delete: (id) => api.delete(`/flashcards/${id}`),
+  getAll: () => api.get('/api/flashcards'),
+  getById: (id) => api.get(`/api/flashcards/${id}`),
+  create: (data) => {
+    console.log('Creating flashcard with data:', data); // Debug log
+    return api.post('/api/flashcards', data);
+  },
+  update: (id, data) => api.put(`/api/flashcards/${id}`, data),
+  delete: (id) => api.delete(`/api/flashcards/${id}`),
 };
+
+// Add error interceptor
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response) {
+      console.error('API Error Response:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+    } else if (error.request) {
+      console.error('API Request Error:', error.request);
+    } else {
+      console.error('API Error:', error.message);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Set auth token helper
 const setAuthToken = (token) => {
   if (token) {
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    localStorage.setItem('token', token);
+    api.defaults.headers['Authorization'] = `Bearer ${token}`;
+    localStorage.setItem('userToken', token);
   } else {
-    delete api.defaults.headers.common['Authorization'];
-    localStorage.removeItem('token');
+    delete api.defaults.headers['Authorization'];
+    localStorage.removeItem('userToken');
   }
 };
 
@@ -150,7 +171,7 @@ const FlashcardLearningPlatform = () => {
 
   // Load token on component mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('userToken');
     if (token) {
       setAuthToken(token);
     }
@@ -180,12 +201,13 @@ const FlashcardLearningPlatform = () => {
     try {
       setLoading(true);
       const response = await flashcardAPI.getAll();
-      setFlashcards(response.data);
+      setFlashcards(Array.isArray(response.data) ? response.data : []);
       setLoading(false);
     } catch (err) {
       setError('Failed to fetch flashcards');
       setLoading(false);
       console.error(err);
+      setFlashcards([]); // Ensure flashcards is an array even on error
     }
   };
 
@@ -203,24 +225,50 @@ const FlashcardLearningPlatform = () => {
 
   const handleCardCreate = async (e) => {
     e.preventDefault();
+    
+    // Validate required fields
     if (!newCard.question || !newCard.answer || !selectedFileId) {
+      setError('Please fill in all fields and select a file');
       alert('Please fill in all fields and select a file');
       return;
     }
 
     try {
+      setLoading(true);
+      // Format the content as a string with question and answer
+      const content = `Question: ${newCard.question.trim()}\nAnswer: ${newCard.answer.trim()}`;
+      
       const cardData = {
-        ...newCard,
-        fileId: selectedFileId
+        content: content,
+        query: '', // Empty query for manual creation
+        options: {
+          difficulty: newCard.difficulty || 'medium',
+          fileId: selectedFileId,
+          type: 'manual',
+          createdAt: new Date().toISOString(),
+          source: 'manual-entry'
+        }
       };
       
-      await flashcardAPI.create(cardData);
+      console.log('Submitting card data:', cardData); // Debug log
+      
+      const response = await flashcardAPI.create(cardData);
+      console.log('Card created successfully:', response.data); // Debug log
+      
+      // Reset form
       setNewCard({ question: '', answer: '', difficulty: 'medium', fileId: null });
-      fetchFlashcards(); // Refresh cards
+      setError(null);
+      
+      // Refresh cards and switch view
+      await fetchFlashcards();
       setActiveView('library');
     } catch (err) {
-      setError('Failed to create flashcard');
-      console.error(err);
+      console.error('Error creating flashcard:', err);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to create flashcard. Please try again.';
+      setError(errorMessage);
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
