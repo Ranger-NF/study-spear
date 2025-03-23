@@ -236,10 +236,73 @@ const suggestNewPeriodForMissed = async (task, traits, reason) => {
   return { period, traits: newTraits };
 };
 
+const analyzeFailureAndReschedule = async (task, reason, existingTraits, pendingTodos) => {
+  try {
+    const prompt = `Analyze this failed task and suggest a new schedule and updated traits.
+    Task: "${task}"
+    Failure reason: "${reason}"
+    Current traits: ${existingTraits.join(', ')}
+    
+    Return a JSON object with:
+    1. New personality traits based on the failure reason
+    2. Best time period for rescheduling considering the failure reason
+    
+    Format: {
+      "updatedTraits": ["trait1", "trait2", ...],
+      "period": "morning/afternoon/evening/midnight",
+      "priority": 1-3,
+      "suggestedTimeSlot": "HH:mm",
+      "estimatedDuration": minutes
+    }`;
+
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama-3.3-70b-versatile",
+      temperature: 0.3,
+    });
+
+    const aiSuggestion = JSON.parse(completion.choices[0].message.content.trim());
+
+    // Find available time slot based on AI suggestion
+    const timeSlot = findNextAvailableSlot(
+      aiSuggestion.period,
+      aiSuggestion.estimatedDuration,
+      pendingTodos
+    );
+
+    return {
+      newSchedule: {
+        scheduledTime: timeSlot,
+        period: aiSuggestion.period,
+        estimatedDuration: aiSuggestion.estimatedDuration,
+        priority: aiSuggestion.priority
+      },
+      updatedTraits: aiSuggestion.updatedTraits
+    };
+  } catch (error) {
+    console.error('Error in analyzeFailureAndReschedule:', error);
+    // Fallback to default values if AI analysis fails
+    const tomorrow = dayjs().add(1, 'day').hour(14).minute(0);
+    return {
+      newSchedule: {
+        scheduledTime: {
+          start: tomorrow.toDate(),
+          end: tomorrow.add(30, 'minute').toDate()
+        },
+        period: 'afternoon',
+        estimatedDuration: 30,
+        priority: 2
+      },
+      updatedTraits: existingTraits // Keep existing traits if AI fails
+    };
+  }
+};
+
 export {
   suggestTaskSchedule,
   calculateTimeSlot,
   suggestTaskPeriod,
   updateTraitsFromCompletion,
-  suggestNewPeriodForMissed
+  suggestNewPeriodForMissed,
+  analyzeFailureAndReschedule
 }; 

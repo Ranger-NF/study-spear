@@ -172,10 +172,66 @@ const getTodoById = async (req, res) => {
   }
 };
 
+const reassignFailedTask = async (req, res) => {
+  try {
+    const { todoId } = req.params;
+    const { reason } = req.body;
+    const userId = req.user.userId;
+
+    // Find the task and user
+    const todo = await Todo.findOne({ _id: todoId, user: userId });
+    if (!todo) {
+      return res.status(404).json({ message: 'Todo not found' });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get all pending todos for scheduling
+    const pendingTodos = await Todo.find({
+      user: userId,
+      status: 'pending',
+      _id: { $ne: todoId } // Exclude current todo
+    });
+
+    // Get AI suggestion for new schedule and updated traits
+    const { newSchedule, updatedTraits } = await todoAiService.analyzeFailureAndReschedule(
+      todo.task,
+      reason,
+      user.traits,
+      pendingTodos
+    );
+
+    // Update the todo with new schedule
+    todo.status = 'pending';
+    todo.scheduledDate = dayjs(newSchedule.scheduledTime.start).toDate();
+    todo.scheduledTime = newSchedule.scheduledTime;
+    todo.period = newSchedule.period;
+    todo.reassignmentReason = reason;
+    await todo.save();
+
+    // Update user traits
+    user.traits = updatedTraits;
+    await user.save();
+
+    res.json({
+      message: 'Task rescheduled successfully',
+      todo,
+      updatedTraits
+    });
+  } catch (error) {
+    console.error('Error reassigning task:', error);
+    res.status(500).json({ message: 'Error reassigning task', error: error.message });
+  }
+};
+
 export {
   createTodo,
   completeTodo,
   reassignMissedTodo,
   getTodos,
-  getTodoById
+  getTodoById,
+  reassignFailedTask
 }; 
