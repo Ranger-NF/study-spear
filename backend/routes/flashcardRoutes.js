@@ -1,4 +1,6 @@
 import express from 'express';
+const router = express.Router();
+import authenticateToken from '../middleware/authMiddleware.js';
 import { 
   createFlashcardSet, 
   getFlashcardSets, 
@@ -8,24 +10,20 @@ import {
   updateCardStats,
   upload
 } from '../controllers/flashcardController.js';
-import authenticateToken from '../middleware/authMiddleware.js';
 
-const router = express.Router();
-
-// Routes that require authentication
+// All routes require authentication
 router.use(authenticateToken);
 
-// Flashcard set routes
-router.route('/')
-  .post(upload.single('document'), createFlashcardSet) // Create new set (with optional file upload)
-  .get(getFlashcardSets); // Get all sets for user
+// Create new set (with optional file upload) and get all sets
+router.post('/', upload.single('document'), createFlashcardSet);
+router.get('/', getFlashcardSets);
 
-router.route('/:id')
-  .get(getFlashcardSet) // Get single set
-  .put(updateFlashcardSet) // Update set
-  .delete(deleteFlashcardSet); // Delete set
+// Single set operations
+router.get('/:id', getFlashcardSet);
+router.put('/:id', updateFlashcardSet);
+router.delete('/:id', deleteFlashcardSet);
 
-// Card statistics route
+// Card statistics
 router.post('/:id/cards/:cardId/stats', updateCardStats);
 
 export default router;
