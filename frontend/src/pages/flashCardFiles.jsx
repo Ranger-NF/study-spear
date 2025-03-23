@@ -19,6 +19,18 @@ const flashcardAPI = {
   },
   update: (id, data) => api.put(`/api/flashcards/${id}`, data),
   delete: (id) => api.delete(`/api/flashcards/${id}`),
+  createFromFile: async (file, options) => {
+    const formData = new FormData();
+    formData.append('document', file);
+    formData.append('options', JSON.stringify(options));
+    
+    console.log('Creating flashcards from file:', file.name, options);
+    return api.post('/api/flashcards/generate', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+  }
 };
 
 // Add error interceptor
@@ -160,6 +172,8 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState('');
+  const [difficulty, setDifficulty] = useState('medium');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -170,27 +184,39 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }) => {
 
     try {
       setLoading(true);
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('name', fileName.trim());
+      setProgress('Processing PDF file...');
 
-      // Add the file upload API call here
-      // const response = await api.post('/api/files/upload', formData);
-      
-      // For now, simulate upload
+      // Create options for NLP processing
+      const options = {
+        title: fileName.trim(),
+        difficulty: difficulty,
+        type: 'pdf',
+        createdAt: new Date().toISOString(),
+        source: 'file-upload',
+        maxCards: 20 // You can make this configurable
+      };
+
+      // Call the NLP service to generate flashcards
+      const response = await flashcardAPI.createFromFile(selectedFile, options);
+      console.log('Flashcards generated:', response.data);
+
+      // Create the new file record
       const newFile = {
         id: Date.now(),
-        name: fileName,
-        path: URL.createObjectURL(selectedFile)
+        name: fileName.trim(),
+        type: 'pdf',
+        flashcards: response.data.flashcards || []
       };
 
       onUpload(newFile);
       onClose();
       setSelectedFile(null);
       setFileName('');
+      setProgress('');
+      
     } catch (error) {
-      console.error('Error uploading file:', error);
-      alert('Failed to upload file');
+      console.error('Error processing file:', error);
+      alert('Failed to process file: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -216,7 +242,7 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }) => {
             />
           </div>
           
-          <div className="mb-6">
+          <div className="mb-4">
             <label className="block text-gray-700 mb-2">Select PDF:</label>
             <input
               type="file"
@@ -231,6 +257,25 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }) => {
               </p>
             )}
           </div>
+
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-2">Difficulty Level:</label>
+            <select
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value)}
+            >
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+          </div>
+          
+          {progress && (
+            <div className="mb-4">
+              <p className="text-sm text-blue-600">{progress}</p>
+            </div>
+          )}
           
           <div className="flex justify-end gap-4">
             <button
@@ -246,7 +291,7 @@ const FileUploadModal = ({ isOpen, onClose, onUpload }) => {
               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:bg-blue-300"
               disabled={loading}
             >
-              {loading ? 'Uploading...' : 'Upload'}
+              {loading ? 'Processing...' : 'Upload & Generate'}
             </button>
           </div>
         </form>
@@ -330,8 +375,31 @@ const FlashcardLearningPlatform = () => {
     }
   };
 
-  const addNewFile = (newFile) => {
-    setFiles([...files, newFile]);
+  const addNewFile = async (fileData) => {
+    try {
+      // Add the file to files list
+      setFiles(prevFiles => [...prevFiles, {
+        id: fileData.id,
+        name: fileData.name,
+        type: fileData.type
+      }]);
+      
+      // Add generated flashcards to state
+      if (fileData.flashcards && fileData.flashcards.length > 0) {
+        setFlashcards(prevCards => [...prevCards, {
+          _id: fileData.id,
+          title: fileData.name,
+          description: `Generated from ${fileData.name} using NLP`,
+          flashcards: fileData.flashcards,
+          fileId: fileData.id,
+          aiGenerated: true,
+          type: 'pdf'
+        }]);
+      }
+    } catch (error) {
+      console.error('Error adding file:', error);
+      setError('Failed to add file and generate flashcards');
+    }
   };
 
   const handleCardCreate = async (e) => {
