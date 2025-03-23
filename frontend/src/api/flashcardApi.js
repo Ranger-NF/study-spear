@@ -1,5 +1,3 @@
-
-
 import axios from 'axios';
 
 const API_URL = 'http://localhost:3000/api';
@@ -74,26 +72,50 @@ class FlashcardApi {
   }
 
   // Create flashcard set from text content
-  async createFlashcardsFromText(content, query = '', options = {}) {
-    const response = await this.client.post('/flashcards', {
+  async createFlashcardsFromText(content, options = {}) {
+    const requestData = {
       content,
-      query,
-      options
-    });
+      query: options.query || '',
+      options: {
+        maxCards: options.maxCards || 20,
+        includeDifficulty: options.includeDifficulty !== false,
+        includeMetadata: options.includeMetadata !== false,
+        generateQuestionTypes: options.questionTypes || ['concept', 'definition', 'application'],
+        deleteAfterProcessing: options.deleteAfterProcessing || false
+      }
+    };
+
+    console.log('Creating flashcards with NLP:', requestData);
+    const response = await this.client.post('/flashcards', requestData);
     return response.data;
   }
 
   // Create flashcard set from file upload
-  async createFlashcardsFromFile(file, query = '', options = {}) {
+  async createFlashcardsFromFile(file, options = {}) {
     const formData = new FormData();
     formData.append('document', file);
-    formData.append('query', query);
-    formData.append('options', JSON.stringify(options));
     
+    // Add NLP options
+    const nlpOptions = {
+      maxCards: options.maxCards || 20,
+      includeDifficulty: options.includeDifficulty !== false,
+      includeMetadata: options.includeMetadata !== false,
+      generateQuestionTypes: options.questionTypes || ['concept', 'definition', 'application'],
+      deleteAfterProcessing: options.deleteAfterProcessing || false
+    };
+
+    formData.append('query', options.query || '');
+    formData.append('options', JSON.stringify(nlpOptions));
+
+    console.log('Creating flashcards from file with NLP:', {
+      fileName: file.name,
+      options: nlpOptions
+    });
+
     const response = await this.client.post('/flashcards', formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+        'Content-Type': 'multipart/form-data'
+      }
     });
     return response.data;
   }
@@ -126,6 +148,39 @@ class FlashcardApi {
   // Get study statistics for a flashcard set
   async getStudyStats(setId) {
     const response = await this.client.get(`/flashcards/${setId}/stats`);
+    return response.data;
+  }
+
+  // New method for enhanced NLP generation
+  async generateEnhancedFlashcards(content, options = {}) {
+    const requestData = {
+      content,
+      query: options.query || '',
+      options: {
+        ...options,
+        useEnhancedNLP: true, // Signal to use enhanced NLP processing
+        maxCards: options.maxCards || 20,
+        questionTypes: options.questionTypes || ['concept', 'definition', 'application'],
+        difficulty: options.difficulty || 'auto',
+        includeMetadata: true,
+        generateTags: true
+      }
+    };
+
+    console.log('Generating enhanced flashcards:', requestData);
+    const response = await this.client.post('/flashcards/enhanced', requestData);
+    return response.data;
+  }
+
+  // New method to analyze content difficulty
+  async analyzeContentDifficulty(content) {
+    const response = await this.client.post('/flashcards/analyze', { content });
+    return response.data;
+  }
+
+  // New method to get suggested study topics
+  async getSuggestedTopics(content) {
+    const response = await this.client.post('/flashcards/suggest-topics', { content });
     return response.data;
   }
 }

@@ -55,9 +55,12 @@ const LearnView = ({ flashcards, selectedDifficulty, selectedFileId, setActiveVi
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
 
-  const filteredCards = flashcards.filter(card => 
-    card.difficulty === selectedDifficulty && 
-    (!selectedFileId || card.fileId === selectedFileId)
+  // Add null checks when flattening and filtering
+  const filteredCards = (flashcards || []).flatMap(set => 
+    (set.flashcards || []).filter(card => 
+      card.difficulty === selectedDifficulty && 
+      (!selectedFileId || set.fileId === selectedFileId)
+    )
   );
 
   if (filteredCards.length === 0) {
@@ -153,6 +156,105 @@ const LearnView = ({ flashcards, selectedDifficulty, selectedFileId, setActiveVi
   );
 };
 
+const FileUploadModal = ({ isOpen, onClose, onUpload }) => {
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileName, setFileName] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedFile || !fileName.trim()) {
+      alert('Please select a file and enter a name');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('name', fileName.trim());
+
+      // Add the file upload API call here
+      // const response = await api.post('/api/files/upload', formData);
+      
+      // For now, simulate upload
+      const newFile = {
+        id: Date.now(),
+        name: fileName,
+        path: URL.createObjectURL(selectedFile)
+      };
+
+      onUpload(newFile);
+      onClose();
+      setSelectedFile(null);
+      setFileName('');
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Failed to upload file');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 className="text-xl font-bold mb-4">Upload PDF File</h2>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label className="block text-gray-700 mb-2">File Name:</label>
+            <input
+              type="text"
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              value={fileName}
+              onChange={(e) => setFileName(e.target.value)}
+              placeholder="Enter file name"
+              required
+            />
+          </div>
+          
+          <div className="mb-6">
+            <label className="block text-gray-700 mb-2">Select PDF:</label>
+            <input
+              type="file"
+              accept=".pdf"
+              onChange={(e) => setSelectedFile(e.target.files[0])}
+              className="w-full border border-gray-300 rounded-md px-3 py-2"
+              required
+            />
+            {selectedFile && (
+              <p className="text-sm text-gray-500 mt-1">
+                Selected: {selectedFile.name}
+              </p>
+            )}
+          </div>
+          
+          <div className="flex justify-end gap-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:bg-blue-300"
+              disabled={loading}
+            >
+              {loading ? 'Uploading...' : 'Upload'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const FlashcardLearningPlatform = () => {
   const [files, setFiles] = useState([]);
   const [flashcards, setFlashcards] = useState([]);
@@ -161,7 +263,17 @@ const FlashcardLearningPlatform = () => {
   const [error, setError] = useState(null);
   const [activeView, setActiveView] = useState('library'); // 'library', 'create', 'learn'
   const [selectedDifficulty, setSelectedDifficulty] = useState(null);
-  const [newCard, setNewCard] = useState({ question: '', answer: '', difficulty: 'medium', fileId: null });
+  const [newCard, setNewCard] = useState({ 
+    question: '', 
+    answer: '', 
+    difficulty: 'medium', 
+    fileId: null,
+    timeStats: [],
+    averageResponseTime: 0,
+    totalAttempts: 0,
+    correctAttempts: 0
+  });
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const difficultyLevels = [
     { id: 'easy', name: 'Easy Topics', icon: 'battery-low' },
@@ -201,7 +313,14 @@ const FlashcardLearningPlatform = () => {
     try {
       setLoading(true);
       const response = await flashcardAPI.getAll();
-      setFlashcards(Array.isArray(response.data.data) ? response.data.data : []);
+      // Ensure we have the correct data structure
+      const flashcardsData = response.data?.data || [];
+      // Make sure each flashcard set has a flashcards array
+      const formattedData = flashcardsData.map(set => ({
+        ...set,
+        flashcards: set.flashcards || []
+      }));
+      setFlashcards(formattedData);
       setLoading(false);
     } catch (err) {
       setError('Failed to fetch flashcards');
@@ -211,16 +330,8 @@ const FlashcardLearningPlatform = () => {
     }
   };
 
-  const addNewFile = () => {
-    const fileName = prompt('Enter file name:');
-    if (fileName) {
-      const newId = files.length > 0 ? Math.max(...files.map(f => f.id)) + 1 : 1;
-      const newFile = { id: newId, name: fileName };
-      setFiles([...files, newFile]);
-      
-      // In a real app, you would save this to your backend
-      // await fileAPI.create(newFile);
-    }
+  const addNewFile = (newFile) => {
+    setFiles([...files, newFile]);
   };
 
   const handleCardCreate = async (e) => {
@@ -235,31 +346,31 @@ const FlashcardLearningPlatform = () => {
 
     try {
       setLoading(true);
-      // Format the content as a string with question and answer
-      const content = `Question: ${newCard.question.trim()}\nAnswer: ${newCard.answer.trim()}`;
-      
       const cardData = {
-        content: content,
-        query: '', // Empty query for manual creation
-        options: {
+        title: `Flashcard Set ${new Date().toLocaleDateString()}`,
+        description: `Created from ${files.find(f => f.id === selectedFileId)?.name || 'Unknown'}`,
+        flashcards: [{
+          question: newCard.question.trim(),
+          answer: newCard.answer.trim(),
           difficulty: newCard.difficulty || 'medium',
-          fileId: selectedFileId,
-          type: 'manual',
-          createdAt: new Date().toISOString(),
-          source: 'manual-entry'
-        }
+          timeStats: [],
+          averageResponseTime: 0,
+          totalAttempts: 0,
+          correctAttempts: 0
+        }],
+        aiGenerated: false,
+        tags: []
       };
       
-      console.log('Submitting card data:', cardData); // Debug log
+      console.log('Submitting card data:', cardData);
       
       const response = await flashcardAPI.create(cardData);
-      console.log('Card created successfully:', response.data); // Debug log
+      console.log('Card created successfully:', response.data);
       
       // Reset form
       setNewCard({ question: '', answer: '', difficulty: 'medium', fileId: null });
       setError(null);
       
-      // Refresh cards and switch view
       await fetchFlashcards();
       setActiveView('library');
     } catch (err) {
@@ -305,13 +416,22 @@ const FlashcardLearningPlatform = () => {
               <span>{file.name}</span>
             </div>
           ))}
-          <div className="flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100" onClick={addNewFile}>
+          <div 
+            className="flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-100" 
+            onClick={() => setIsUploadModalOpen(true)}
+          >
             <div className="w-6 h-6 rounded-full border border-gray-400 mr-4 flex items-center justify-center">
               <span className="text-gray-500">+</span>
             </div>
-            <span>Add File</span>
+            <span>Upload PDF</span>
           </div>
         </div>
+        
+        <FileUploadModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setIsUploadModalOpen(false)}
+          onUpload={addNewFile}
+        />
         
         <div className="mt-8">
           <button 
@@ -341,27 +461,47 @@ const FlashcardLearningPlatform = () => {
           <div className="grid grid-cols-2 gap-4">
             {flashcards
               .filter(card => !selectedFileId || card.fileId === selectedFileId)
-              .map(card => (
-                <div key={card._id || card.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md">
+              .map(flashcardSet => (
+                <div key={flashcardSet._id || flashcardSet.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md">
                   <div className="flex justify-between mb-2">
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      card.difficulty === 'easy' ? 'bg-green-100 text-green-800' : 
-                      card.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      {card.title}
-                    </span>
+                    <span className="text-sm font-medium">{flashcardSet.title}</span>
                     <button 
-                      onClick={() => deleteFlashcard(card._id || card.id)} 
+                      onClick={() => deleteFlashcard(flashcardSet._id || flashcardSet.id)} 
                       className="text-red-500 hover:text-red-700"
                     >
                       ×
                     </button>
                   </div>
-                  <h3 className="font-bold mb-2">{card.question}</h3>
-                  <p className="text-gray-700">{card.answer}</p>
+                  <p className="text-gray-600 text-sm mb-2">{flashcardSet.description}</p>
+                  {(flashcardSet.flashcards || []).map((card, index) => (
+                    <div key={index} className="mt-2 p-2 border-t border-gray-100">
+                      <div className="flex justify-between items-center">
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          card.difficulty === 'easy' ? 'bg-green-100 text-green-800' : 
+                          card.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {card.difficulty}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          Attempts: {card.totalAttempts}
+                        </span>
+                      </div>
+                      <h3 className="font-bold mt-2">{card.question}</h3>
+                      <p className="text-gray-700">{card.answer}</p>
+                    </div>
+                  ))}
+                  {(flashcardSet.tags || []).length > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-100">
+                      {flashcardSet.tags.map((tag, index) => (
+                        <span key={index} className="inline-block bg-gray-100 rounded-full px-2 py-1 text-xs mr-1">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-            ))}
+              ))}
           </div>
         )}
       </div>
