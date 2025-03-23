@@ -12,21 +12,21 @@ const api = axios.create({
 
 // Flashcard API endpoints
 const flashcardAPI = {
-  getAll: () => api.get('/flashcards'),
-  getById: (id) => api.get(`/flashcards/${id}`),
+  getAll: () => api.get('/api/flashcards'),
+  getById: (id) => api.get(`/api/flashcards/${id}`),
   create: (data) => {
     console.log('Creating flashcard with data:', data); // Debug log
-    return api.post('/flashcards', data);
+    return api.post('/api/flashcards', data);
   },
-  update: (id, data) => api.put(`/flashcards/${id}`, data),
-  delete: (id) => api.delete(`/flashcards/${id}`),
+  update: (id, data) => api.put(`/api/flashcards/${id}`, data),
+  delete: (id) => api.delete(`/api/flashcards/${id}`),
   createFromFile: async (file, options) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('options', JSON.stringify(options));
     
     console.log('Creating flashcards from file:', file.name, options);
-    return api.post('/flashcards/generate-from-pdf', formData, {
+    return api.post('/api/flashcards/generate-from-pdf', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
