@@ -201,7 +201,7 @@ const FlashcardLearningPlatform = () => {
     try {
       setLoading(true);
       const response = await flashcardAPI.getAll();
-      setFlashcards(Array.isArray(response.data) ? response.data : []);
+      setFlashcards(Array.isArray(response.data.data) ? response.data.data : []);
       setLoading(false);
     } catch (err) {
       setError('Failed to fetch flashcards');
@@ -349,7 +349,7 @@ const FlashcardLearningPlatform = () => {
                       card.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
                       'bg-red-100 text-red-800'
                     }`}>
-                      {card.difficulty}
+                      {card.title}
                     </span>
                     <button 
                       onClick={() => deleteFlashcard(card._id || card.id)} 
