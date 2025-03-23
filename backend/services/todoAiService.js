@@ -19,7 +19,7 @@ const suggestTaskSchedule = async (task, traits, pendingTodos, userPreferences) 
     morning: ['morning', 'breakfast', 'dawn', 'sunrise', 'early', 'am'],
     afternoon: ['afternoon', 'lunch', 'noon'],
     evening: ['evening', 'sunset', 'dinner', 'dusk', 'pm'],
-    midnight: ['night', 'midnight', 'late']
+    midnight: ['night', 'midnight', 'late', 'bed']
   };
 
   // Find natural period from task description
