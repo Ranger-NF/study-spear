@@ -1,6 +1,6 @@
-const User = require('../models/User');
-const Groq = require('groq-sdk');
-const fs = require('fs');
+import User from '../models/User.js';
+import Groq from 'groq-sdk';
+import fs from 'fs';
 
 // Debug logging
 console.log('GROQ_API_KEY:', process.env.GROQ_API_KEY ? 'Present' : 'Missing');
@@ -67,4 +67,4 @@ const getQuestions = async (req, res) => {
   res.json(onboardingQuestions);
 }
 
-module.exports = { processAnswers, getQuestions };
+export { processAnswers, getQuestions };

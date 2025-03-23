@@ -1,11 +1,10 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const authenticateToken = require('../middleware/authMiddleware');
-const { processAnswers, getQuestions } = require('../controllers/onboardAnswer');
+import authenticateToken from '../middleware/authMiddleware.js';
+import { processAnswers, getQuestions } from '../controllers/onboardAnswer.js';
 
 router.post('/', authenticateToken, processAnswers);
 router.get('/', getQuestions);
 
 // Other routes...
-
-module.exports = router;
+export default router;

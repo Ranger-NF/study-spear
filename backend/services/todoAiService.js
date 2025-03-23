@@ -1,5 +1,5 @@
-const Groq = require('groq-sdk');
-const dayjs = require('dayjs');
+import { Groq } from 'groq-sdk';
+import dayjs from 'dayjs';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -236,7 +236,7 @@ const suggestNewPeriodForMissed = async (task, traits, reason) => {
   return { period, traits: newTraits };
 };
 
-module.exports = {
+export {
   suggestTaskSchedule,
   calculateTimeSlot,
   suggestTaskPeriod,

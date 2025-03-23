@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const dayjs = require('dayjs');
+import mongoose from 'mongoose';
+import dayjs from 'dayjs';
 
 const TodoSchema = new mongoose.Schema({
   user: {
@@ -36,7 +36,7 @@ const TodoSchema = new mongoose.Schema({
   },
   priority: {
     type: Number,
-    default: 2,
+    default: 2
   },
   estimatedDuration: {
     type: Number,
@@ -55,4 +55,4 @@ const TodoSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('Todo', TodoSchema); 
+export default mongoose.model('Todo', TodoSchema); 

@@ -1,7 +1,7 @@
-const Todo = require('../models/Todo');
-const User = require('../models/User');
-const dayjs = require('dayjs');
-const todoAiService = require('../services/todoAiService');
+import dayjs from 'dayjs';
+import Todo from '../models/Todo.js';
+import User from '../models/User.js';
+import * as todoAiService from '../services/todoAiService.js';
 
 const createTodo = async (req, res) => {
   try {
@@ -172,7 +172,7 @@ const getTodoById = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   createTodo,
   completeTodo,
   reassignMissedTodo,
