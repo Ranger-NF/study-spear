@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Sidebar from '../components/sidebar';
+import { File } from 'lucide-react';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:5000/api',
@@ -475,13 +476,9 @@ const FlashcardLearningPlatform = () => {
           {files.map(file => (
             <div 
               key={file.id} 
-              className={`flex items-center p-2 rounded-md cursor-pointer ${selectedFileId === file.id ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
-              onClick={() => setSelectedFileId(file.id)}
+              className={`flex items-center p-2 rounded-md cursor-pointer`}
             >
-              <div className="w-6 h-6 rounded-full border border-gray-400 mr-4 flex items-center justify-center">
-                {selectedFileId === file.id && <div className="w-4 h-4 rounded-full bg-blue-500"></div>}
-              </div>
-              <span>{file.name}</span>
+              <span className='flex gap-1'><File className='text-sm text-gray-500'/>{file.name}</span>
             </div>
           ))}
           <div 
