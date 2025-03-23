@@ -1,5 +1,10 @@
 import { Groq } from 'groq-sdk';
 import dayjs from 'dayjs';
+// Alternative import method
+const isBetween = (await import('dayjs/plugin/isBetween.js')).default;
+
+// Extend dayjs with the isBetween plugin
+dayjs.extend(isBetween);
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -11,6 +16,80 @@ const TIME_SLOTS = {
   afternoon: { start: '12:00', end: '16:59' },
   evening: { start: '17:00', end: '21:59' },
   midnight: { start: '22:00', end: '05:59' }
+};
+
+// Add this constant at the top with other constants
+const VALID_PERIODS = {
+  morning: { startHour: 6, endHour: 11 },
+  afternoon: { startHour: 12, endHour: 16 },
+  evening: { startHour: 17, endHour: 21 },
+  midnight: { startHour: 22, endHour: 5 }
+};
+
+// Move findNextAvailableSlot outside of suggestTaskSchedule
+const findNextAvailableSlot = (period, duration, pendingTodos) => {
+  // Normalize period to ensure it's valid
+  const normalizedPeriod = period.toLowerCase().trim();
+  if (!VALID_PERIODS[normalizedPeriod]) {
+    console.warn(`Invalid period "${period}" provided, defaulting to afternoon`);
+    period = 'afternoon';
+  }
+
+  const range = VALID_PERIODS[normalizedPeriod] || VALID_PERIODS.afternoon;
+  let currentDate = dayjs();
+  let daysToCheck = 7; // Look up to a week ahead
+
+  while (daysToCheck > 0) {
+    // If task needs morning slot and current time is past morning, start with next day
+    if (period === 'morning' && currentDate.hour() >= range.endHour) {
+      currentDate = currentDate.add(1, 'day').hour(range.startHour).minute(0);
+    }
+
+    // Get pending todos for this date only
+    const todosForDate = pendingTodos.filter(todo => 
+      dayjs(todo.scheduledTime.start).isSame(currentDate, 'date') &&
+      todo.status === 'pending' // Double check status
+    );
+
+    // Try each possible start time within the period
+    for (let hour = range.startHour; hour <= range.endHour; hour++) {
+      const proposedStart = currentDate.hour(hour).minute(0);
+      const proposedEnd = proposedStart.add(duration, 'minute');
+
+      // Skip if proposed time is in the past
+      if (proposedStart.isBefore(dayjs())) {
+        continue;
+      }
+
+      // Check for conflicts with pending todos only
+      const hasConflict = todosForDate.some(todo => {
+        const todoStart = dayjs(todo.scheduledTime.start);
+        const todoEnd = dayjs(todo.scheduledTime.end);
+        return (
+          proposedStart.isBetween(todoStart, todoEnd, null, '[]') ||
+          proposedEnd.isBetween(todoStart, todoEnd, null, '[]') ||
+          todoStart.isBetween(proposedStart, proposedEnd, null, '[]')
+        );
+      });
+
+      if (!hasConflict) {
+        return {
+          start: proposedStart.toDate(),
+          end: proposedEnd.toDate()
+        };
+      }
+    }
+
+    currentDate = currentDate.add(1, 'day').hour(range.startHour).minute(0);
+    daysToCheck--;
+  }
+
+  // If no slot found within a week, return a default slot for tomorrow
+  const tomorrow = dayjs().add(1, 'day').hour(range.startHour).minute(0);
+  return {
+    start: tomorrow.toDate(),
+    end: tomorrow.add(duration, 'minute').toDate()
+  };
 };
 
 const suggestTaskSchedule = async (task, traits, pendingTodos, userPreferences) => {
@@ -31,73 +110,6 @@ const suggestTaskSchedule = async (task, traits, pendingTodos, userPreferences) 
       break;
     }
   }
-
-  // Define time ranges for each period
-  const periodRanges = {
-    morning: { startHour: 6, endHour: 11 },
-    afternoon: { startHour: 12, endHour: 16 },
-    evening: { startHour: 17, endHour: 21 },
-    midnight: { startHour: 22, endHour: 5 }
-  };
-
-  // Find the next available date and time slot
-  const findNextAvailableSlot = (period, duration, pendingTodos) => {
-    const range = periodRanges[period];
-    let currentDate = dayjs();
-    let daysToCheck = 7; // Look up to a week ahead
-
-    while (daysToCheck > 0) {
-      // If task needs morning slot and current time is past morning, start with next day
-      if (period === 'morning' && currentDate.hour() >= range.endHour) {
-        currentDate = currentDate.add(1, 'day').hour(range.startHour).minute(0);
-      }
-
-      // Get pending todos for this date only
-      const todosForDate = pendingTodos.filter(todo => 
-        dayjs(todo.scheduledTime.start).isSame(currentDate, 'date') &&
-        todo.status === 'pending' // Double check status
-      );
-
-      // Try each possible start time within the period
-      for (let hour = range.startHour; hour <= range.endHour; hour++) {
-        const proposedStart = currentDate.hour(hour).minute(0);
-        const proposedEnd = proposedStart.add(duration, 'minute');
-
-        // Skip if proposed time is in the past
-        if (proposedStart.isBefore(dayjs())) {
-          continue;
-        }
-
-        // Check for conflicts with pending todos only
-        const hasConflict = todosForDate.some(todo => {
-          const todoStart = dayjs(todo.scheduledTime.start);
-          const todoEnd = dayjs(todo.scheduledTime.end);
-          return (
-            proposedStart.isBetween(todoStart, todoEnd, null, '[]') ||
-            proposedEnd.isBetween(todoStart, todoEnd, null, '[]') ||
-            todoStart.isBetween(proposedStart, proposedEnd, null, '[]')
-          );
-        });
-
-        if (!hasConflict) {
-          return {
-            start: proposedStart.toDate(),
-            end: proposedEnd.toDate()
-          };
-        }
-      }
-
-      currentDate = currentDate.add(1, 'day').hour(range.startHour).minute(0);
-      daysToCheck--;
-    }
-
-    // If no slot found within a week, return a default slot for tomorrow
-    const tomorrow = dayjs().add(1, 'day').hour(range.startHour).minute(0);
-    return {
-      start: tomorrow.toDate(),
-      end: tomorrow.add(duration, 'minute').toDate()
-    };
-  };
 
   // Estimate duration based on task type
   const estimateDuration = (task) => {
@@ -180,7 +192,7 @@ const calculateTimeSlot = (suggestedSchedule, pendingTodos) => {
 };
 
 const suggestTaskPeriod = async (task, traits) => {
-  const prompt = `Given these user traits: ${traits.join(', ')}, and this task: "${task}", 
+  const prompt = `Given these user traits: ${traits?.join(', ') || 'no traits yet'}, and this task: "${task}", 
   suggest the most suitable time period (morning, afternoon, evening, or midnight) for completing this task. 
   Consider the user's personality traits and the nature of the task. 
   Return only the period name, nothing else.`;
@@ -195,12 +207,16 @@ const suggestTaskPeriod = async (task, traits) => {
 };
 
 const updateTraitsFromCompletion = async (existingTraits, taskDetails) => {
-  const prompt = `Given a user with these traits: ${existingTraits.join(', ')},
+  if (!taskDetails) {
+    return existingTraits || [];
+  }
+
+  const prompt = `Given a user with these traits: ${existingTraits?.join(', ') || 'no traits yet'},
   analyze this task completion:
-  - Task: ${taskDetails.task}
+  - Task: ${taskDetails.task || 'Unknown task'}
   - Completed: ${taskDetails.isCompletedOnTime ? 'on time' : 'late'}
-  - Assigned period: ${taskDetails.assignedPeriod}
-  - Completed period: ${taskDetails.completedPeriod}
+  - Assigned period: ${taskDetails.assignedPeriod || 'unknown'}
+  - Completed period: ${taskDetails.completedPeriod || 'unknown'}
 
   Based on this information, suggest an updated list of personality traits.
   Return only the traits as a comma-separated list, nothing else.`;
@@ -215,9 +231,9 @@ const updateTraitsFromCompletion = async (existingTraits, taskDetails) => {
 };
 
 const suggestNewPeriodForMissed = async (task, traits, reason) => {
-  const prompt = `Given these user traits: ${traits.join(', ')}, 
-  this missed task: "${task}", 
-  and the reason for missing it: "${reason}",
+  const prompt = `Given these user traits: ${traits?.join(', ') || 'no traits yet'}, 
+  this missed task: "${task || 'Unknown task'}", 
+  and the reason for missing it: "${reason || 'No reason provided'}",
   suggest a new suitable time period (morning, afternoon, evening, or midnight) for rescheduling this task.
   Also, suggest any new traits that might be relevant based on the reason given.
   Return the response in this format: "period: <period>, traits: <trait1, trait2, ...>"`;
@@ -229,59 +245,86 @@ const suggestNewPeriodForMissed = async (task, traits, reason) => {
   });
 
   const response = completion.choices[0].message.content;
-  const [periodPart, traitsPart] = response.split(', traits: ');
-  const period = periodPart.replace('period: ', '').trim();
-  const newTraits = traitsPart.split(',').map(trait => trait.trim());
-
-  return { period, traits: newTraits };
+  try {
+    const [periodPart, traitsPart] = response.split(', traits: ');
+    const period = periodPart.replace('period: ', '').trim();
+    const newTraits = traitsPart ? traitsPart.split(',').map(trait => trait.trim()) : [];
+    return { period, traits: newTraits };
+  } catch (error) {
+    console.error('Error parsing AI response:', error);
+    return { period: 'afternoon', traits: traits || [] };
+  }
 };
 
 const analyzeFailureAndReschedule = async (task, reason, existingTraits, pendingTodos) => {
   try {
-    const prompt = `Analyze this failed task and suggest a new schedule and updated traits.
-    Task: "${task}"
-    Failure reason: "${reason}"
-    Current traits: ${existingTraits.join(', ')}
-    
-    Return a JSON object with:
-    1. New personality traits based on the failure reason
-    2. Best time period for rescheduling considering the failure reason
-    
-    Format: {
-      "updatedTraits": ["trait1", "trait2", ...],
-      "period": "morning/afternoon/evening/midnight",
-      "priority": 1-3,
-      "suggestedTimeSlot": "HH:mm",
-      "estimatedDuration": minutes
-    }`;
+    const prompt = `Based on this task failure information, suggest a new schedule and traits. Return ONLY a JSON object in this exact format with period being EXACTLY one of: morning, afternoon, evening, or midnight:
+{
+  "updatedTraits": ["trait1", "trait2"],
+  "period": "morning",
+  "priority": 2,
+  "suggestedTimeSlot": "09:00",
+  "estimatedDuration": 30
+}
+
+Task: "${task || 'Unknown task'}"
+Failure reason: "${reason || 'No reason provided'}"
+Current traits: ${existingTraits?.join(', ') || 'no traits yet'}`;
 
     const completion = await groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
       model: "llama-3.3-70b-versatile",
-      temperature: 0.3,
+      temperature: 0.1,
     });
 
-    const aiSuggestion = JSON.parse(completion.choices[0].message.content.trim());
+    let aiResponse;
+    try {
+      aiResponse = JSON.parse(completion.choices[0].message.content.trim());
+      
+      // Validate and normalize the period
+      const normalizedPeriod = aiResponse.period?.toLowerCase().trim() || 'afternoon';
+      if (!VALID_PERIODS[normalizedPeriod]) {
+        console.warn(`Invalid period "${aiResponse.period}" from AI, defaulting to afternoon`);
+        aiResponse.period = 'afternoon';
+      } else {
+        aiResponse.period = normalizedPeriod;
+      }
+
+      // Validate other fields
+      aiResponse.priority = Number(aiResponse.priority) || 2;
+      aiResponse.estimatedDuration = Number(aiResponse.estimatedDuration) || 30;
+      aiResponse.updatedTraits = Array.isArray(aiResponse.updatedTraits) ? 
+        aiResponse.updatedTraits : (existingTraits || []);
+      
+    } catch (parseError) {
+      console.error('Failed to parse AI response:', completion.choices[0].message.content);
+      aiResponse = {
+        updatedTraits: existingTraits || [],
+        period: "afternoon",
+        priority: 2,
+        suggestedTimeSlot: "14:00",
+        estimatedDuration: 30
+      };
+    }
 
     // Find available time slot based on AI suggestion
     const timeSlot = findNextAvailableSlot(
-      aiSuggestion.period,
-      aiSuggestion.estimatedDuration,
-      pendingTodos
+      aiResponse.period,
+      aiResponse.estimatedDuration,
+      pendingTodos || []
     );
 
     return {
       newSchedule: {
         scheduledTime: timeSlot,
-        period: aiSuggestion.period,
-        estimatedDuration: aiSuggestion.estimatedDuration,
-        priority: aiSuggestion.priority
+        period: aiResponse.period,
+        estimatedDuration: aiResponse.estimatedDuration,
+        priority: aiResponse.priority
       },
-      updatedTraits: aiSuggestion.updatedTraits
+      updatedTraits: aiResponse.updatedTraits
     };
   } catch (error) {
     console.error('Error in analyzeFailureAndReschedule:', error);
-    // Fallback to default values if AI analysis fails
     const tomorrow = dayjs().add(1, 'day').hour(14).minute(0);
     return {
       newSchedule: {
@@ -293,7 +336,7 @@ const analyzeFailureAndReschedule = async (task, reason, existingTraits, pending
         estimatedDuration: 30,
         priority: 2
       },
-      updatedTraits: existingTraits // Keep existing traits if AI fails
+      updatedTraits: existingTraits || []
     };
   }
 };
@@ -304,5 +347,6 @@ export {
   suggestTaskPeriod,
   updateTraitsFromCompletion,
   suggestNewPeriodForMissed,
-  analyzeFailureAndReschedule
+  analyzeFailureAndReschedule,
+  findNextAvailableSlot
 }; 

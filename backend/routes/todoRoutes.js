@@ -14,7 +14,7 @@ router.get('/:todoId',authenticateToken, getTodoById);
 router.get('/user/traits', authenticateToken, getUserTraits);
 
 router.post('/',authenticateToken, createTodo);
-router.put('/:todoId/complete',authenticateToken, completeTodo);
+router.post('/:todoId/complete',authenticateToken, completeTodo);
 router.post('/:todoId/reassign',authenticateToken, reassignFailedTask);
 
 export default router; 
