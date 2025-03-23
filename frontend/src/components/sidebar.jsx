@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, CheckSquare, Book, Clock, Home, Settings, BarChart, BookOpen, Users } from 'lucide-react';
+import { Calendar, CheckSquare, Book, Clock, Home, Settings, BarChart, BookOpen, Users, CloudLightning, Brain, PersonStanding, Heart } from 'lucide-react';
 import { useNavigate, useLocation } from "react-router-dom";
 
 const Sidebar = () => {
@@ -57,8 +57,8 @@ const Sidebar = () => {
         <ul>
           {[
             { id: 'home', icon: Home, label: 'Dashboard' },
-            { id: 'tasks', icon: CheckSquare, label: 'Tasks' },
-            { id: 'flashcards', icon: Book, label: 'Flashcards' },
+            { id: 'tasks', icon: CloudLightning, label: 'Energy Manager' },
+            { id: 'flashcards', icon: Brain, label: 'Memorizers' },
             // { id: 'materials', icon: BookOpen, label: 'Materials' },
             // { id: 'calendar', icon: Calendar, label: 'Calendar' },
             // { id: 'analytics', icon: BarChart, label: 'Analytics' },
@@ -82,9 +82,10 @@ const Sidebar = () => {
       </nav>
       
       <div className="p-4 border-t border-gray-200">
-        <button className="flex items-center py-2 text-gray-600 hover:text-gray-900 w-full">
-          <Settings size={20} />
-          <span className="ml-3 hidden md:block">Settings</span>
+        <button className="flex items-center py-2 gap-2 text-gray-600 hover:text-gray-900 w-full">
+          <span className="ml-3 hidden md:block">Made by Exeperia</span>
+
+          <Heart size={20} />
         </button>
       </div>
     </div>

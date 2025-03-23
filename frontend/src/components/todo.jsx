@@ -51,9 +51,7 @@ const TodoPage = () => {
   };
 
   // Check if task deadline has passed
-  const isDeadlinePassed = (deadline) => {
-    return new Date(deadline) < new Date();
-  };
+
 
   // Get time period info
   const getTimePeriodInfo = (period) => {
@@ -61,28 +59,28 @@ const TodoPage = () => {
       case 'morning':
         return { 
           icon: <Sunrise className="h-5 w-5 text-yellow-500" />,
-          label: 'Morning Tasks',
+          label: 'Morning',
           description: '5 AM - 11:59 AM',
           color: 'bg-yellow-50 border-yellow-200'
         };
       case 'afternoon':
         return { 
           icon: <Sun className="h-5 w-5 text-orange-500" />,
-          label: 'Afternoon Tasks',
+          label: 'Afternoon',
           description: '12 PM - 4:59 PM',
           color: 'bg-orange-50 border-orange-200'
         };
       case 'evening':
         return { 
           icon: <Sunset className="h-5 w-5 text-red-500" />,
-          label: 'Evening Tasks',
+          label: 'Evening',
           description: '5 PM - 7:59 PM',
           color: 'bg-red-50 border-red-200'
         };
       case 'midnight':
         return { 
           icon: <Moon className="h-5 w-5 text-blue-500" />,
-          label: 'Night Tasks',
+          label: 'Night',
           description: '8 PM - 4:59 AM',
           color: 'bg-blue-50 border-blue-200'
         };
@@ -265,7 +263,7 @@ const TodoPage = () => {
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto p-6">
             <div className="border border-gray-300 rounded-lg p-6 bg-white">
-              <h1 className="text-2xl font-semibold text-center mb-6">Tasks</h1>
+              <h1 className="text-2xl font-semibold text-center mb-6">Energy Manager</h1>
               
               {error && (
                 <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-md">
@@ -383,7 +381,7 @@ const TodoPage = () => {
                 className="w-full p-2 border border-dashed border-gray-300 rounded-md text-gray-500 hover:border-blue-500 hover:text-blue-500 flex items-center justify-center"
               >
                 <Plus size={16} className="mr-1" />
-                Add Task
+                Add Entry
               </button>
             )}
           </div>

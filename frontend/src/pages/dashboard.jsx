@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Clock, Search, BookOpen, CheckSquare, LogOut, User } from 'lucide-react';
+import { Clock, Search, BookOpen, CheckSquare, LogOut, User, CloudLightning, Brain, HelpCircleIcon, HelpingHand } from 'lucide-react';
 import { useNavigate } from "react-router-dom";
 import Sidebar from '../components/sidebar';
 
@@ -75,11 +75,11 @@ const StudentDashboard = () => {
         return (
           <div onClick={() => navigate("/flashcards")} className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center shadow-sm hover:shadow-md transition-shadow cursor-pointer h-48">
             <div className="mb-2">
-              <BookOpen size={32} className="text-blue-600" />
+              <Brain size={32} className="text-blue-600" />
             </div>
-            <h3 className="text-lg font-medium">Flashcards</h3>
+            <h3 className="text-lg font-medium">Memorizer</h3>
             <p className="text-sm text-gray-500 mt-2 text-center">
-              Review key concepts with interactive flashcards and track your learning progress
+              Review key concepts with interactive memorizer
             </p>
           </div>
         );
@@ -87,11 +87,11 @@ const StudentDashboard = () => {
         return (
           <div onClick={() => navigate("/todo")} className="border border-gray-200 rounded-lg p-4 flex flex-col items-center justify-center bg-white shadow-sm hover:shadow-md transition-shadow cursor-pointer h-48">
             <div className="mb-2">
-              <CheckSquare size={32} className="text-green-600" />
+              <CloudLightning size={32} className="text-green-600" />
             </div>
-            <h3 className="text-lg font-medium">Task Manager</h3>
+            <h3 className="text-lg font-medium">Energy Manager</h3>
             <p className="text-sm text-gray-500 mt-2 text-center">
-              Organize upcoming, ongoing, and completed tasks to stay on track
+              Get an adaptive & personalised activity scheduling
             </p>
           </div>
         );
@@ -112,13 +112,8 @@ const StudentDashboard = () => {
             <h2 className="text-lg font-semibold">{activeTab === 'home' ? 'Dashboard' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h2>
             
             <div className="flex items-center">
-              <div className="relative mr-4">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  className="pl-9 pr-4 py-2 border border-gray-300 rounded-md"
-                />
-                <Search size={16} className="absolute left-3 top-3 text-gray-400" />
+              <div className="flex gap-2 relative mr-4">
+                Donate Now <HelpingHand/>
               </div>
               
               <div className="relative" ref={profileMenuRef}>

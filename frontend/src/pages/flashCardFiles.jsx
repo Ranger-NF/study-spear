@@ -6,7 +6,8 @@ import { File } from 'lucide-react';
 const api = axios.create({
   baseURL: import.meta.env.VITE_BACKEND_API_URL || 'http://localhost:5000/api',
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${localStorage.getItem('userToken')}`
   }
 });
 
@@ -436,12 +437,14 @@ const FlashcardLearningPlatform = () => {
       alert('Please fill in all fields and select a file');
       return;
     }
-
+    
     try {
       setLoading(true);
+      const selectedFile = files.find(f => f.id === selectedFileId);
+      
       const cardData = {
         title: `Flashcard Set ${new Date().toLocaleDateString()}`,
-        description: `Created from ${files.find(f => f.id === selectedFileId)?.name || 'Unknown'}`,
+        description: `Created from ${selectedFile?.name || 'Unknown'}`,
         flashcards: [{
           question: newCard.question.trim(),
           answer: newCard.answer.trim(),
@@ -452,18 +455,20 @@ const FlashcardLearningPlatform = () => {
           correctAttempts: 0
         }],
         aiGenerated: false,
-        tags: []
+        tags: [selectedFile?.name?.toLowerCase() || 'flashcard'],
+        studyStats: {
+          totalStudySessions: 0,
+          averageSessionDuration: 0
+        }
       };
       
       console.log('Submitting card data:', cardData);
-      
       const response = await flashcardAPI.create(cardData);
       console.log('Card created successfully:', response.data);
       
       // Reset form
       setNewCard({ question: '', answer: '', difficulty: 'medium', fileId: null });
       setError(null);
-      
       await fetchFlashcards();
       setActiveView('library');
     } catch (err) {
@@ -536,18 +541,18 @@ const FlashcardLearningPlatform = () => {
             className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors"
             onClick={() => setActiveView('create')}
           >
-            Create New Flashcard
+            Create New Memorizer
           </button>
         </div>
       </div>
 
       {/* Right Panel - Flashcards */}
       <div className="w-2/3 p-6 overflow-y-auto">
-        <h2 className="text-2xl font-bold mb-6">Flashcards</h2>
+        <h2 className="text-2xl font-bold mb-6">Memorizers</h2>
         
         {loading ? (
           <div className="flex justify-center items-center h-64">
-            <p>Loading flashcards...</p>
+            <p>Loading memorizer...</p>
           </div>
         ) : error ? (
           <div className="text-red-500">{error}</div>
@@ -564,7 +569,6 @@ const FlashcardLearningPlatform = () => {
                   <div className="flex justify-between mb-2">
                     <span className="text-sm font-medium">{flashcardSet.question}</span>
                     <button 
-                      onClick={() => deleteFlashcard(flashcardSet._id || flashcardSet.id)} 
                       className="text-red-500 hover:text-red-700"
                     >
                       ×
@@ -607,87 +611,84 @@ const FlashcardLearningPlatform = () => {
   );
 
   const renderCreateView = () => (
-    <div className="h-full overflow-y-auto px-4">
-      <div className="max-w-2xl mx-auto py-8">
-        <h2 className="text-2xl font-bold mb-6">Create New Flashcard</h2>
+    <div className="max-w-2xl mx-auto py-8">
+      <h2 className="text-2xl font-bold mb-6">Create New Card</h2>
+      
+      <form onSubmit={handleCardCreate}>
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Select File:</label>
+          <select 
+            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            value={selectedFileId || ''}
+            onChange={(e) => setSelectedFileId(e.target.value ? Number(e.target.value) : null)}
+            required
+          >
+            <option value="">Select a file</option>
+            {files.map(file => (
+              <option key={file.id} value={file.id}>{file.name}</option>
+            ))}
+          </select>
+        </div>
         
-        <form onSubmit={handleCardCreate}>
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2">Select File:</label>
-            <select 
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              value={selectedFileId || ''}
-              onChange={(e) => setSelectedFileId(e.target.value ? Number(e.target.value) : null)}
-              required
-            >
-              <option value="">Select a file</option>
-              {files.map(file => (
-                <option key={file.id} value={file.id}>{file.name}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2">Question:</label>
-            <textarea 
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              value={newCard.question}
-              onChange={(e) => setNewCard({...newCard, question: e.target.value})}
-              rows="3"
-              required
-            />
-          </div>
-          
-          <div className="mb-4">
-            <label className="block text-gray-700 mb-2">Answer:</label>
-            <textarea 
-              className="w-full border border-gray-300 rounded-md px-3 py-2"
-              value={newCard.answer}
-              onChange={(e) => setNewCard({...newCard, answer: e.target.value})}
-              rows="3"
-              required
-            />
-          </div>
-          
-          <div className="mb-6">
-            <label className="block text-gray-700 mb-2">Difficulty:</label>
-            <div className="flex gap-4">
-              {['easy', 'medium', 'hard'].map(level => (
-                <label key={level} className="flex items-center">
-                  <input 
-                    type="radio" 
-                    name="difficulty" 
-                    value={level}
-                    checked={newCard.difficulty === level}
-                    onChange={() => setNewCard({...newCard, difficulty: level})}
-                    className="mr-2"
-                  />
-                  <span className="capitalize">{level}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-          
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Question:</label>
+          <textarea 
+            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            value={newCard.question}
+            onChange={(e) => setNewCard({...newCard, question: e.target.value})}
+            rows="3"
+            required
+          />
+        </div>
+        
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Answer:</label>
+          <textarea 
+            className="w-full border border-gray-300 rounded-md px-3 py-2"
+            value={newCard.answer}
+            onChange={(e) => setNewCard({...newCard, answer: e.target.value})}
+            rows="3"
+            required
+          />
+        </div>
+        
+        <div className="mb-6">
+          <label className="block text-gray-700 mb-2">Difficulty:</label>
           <div className="flex gap-4">
-            <button 
-              type="submit"
-              className="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition-colors"
-            >
-              Save Card
-            </button>
-            <button 
-              type="button"
-              onClick={() => setActiveView('library')}
-              className="bg-gray-200 text-gray-800 py-2 px-6 rounded-md hover:bg-gray-300 transition-colors"
-            >
-              Cancel
-            </button>
+            {['easy', 'medium', 'hard'].map(level => (
+              <label key={level} className="flex items-center">
+                <input 
+                  type="radio" 
+                  name="difficulty" 
+                  value={level}
+                  checked={newCard.difficulty === level}
+                  onChange={() => setNewCard({...newCard, difficulty: level})}
+                  className="mr-2"
+                />
+                <span className="capitalize">{level}</span>
+              </label>
+            ))}
           </div>
-        </form>
-      </div>
+        </div>
+        
+        <div className="flex gap-4">
+          <button 
+            type="submit"
+            className="bg-blue-500 text-white py-2 px-6 rounded-md hover:bg-blue-600 transition-colors"
+          >
+            Save Card
+          </button>
+          <button 
+            type="button"
+            onClick={() => setActiveView('library')}
+            className="bg-gray-200 text-gray-800 py-2 px-6 rounded-md hover:bg-gray-300 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
     </div>
   );
-
   const renderDifficultySelection = () => (
     <div className="h-full overflow-y-auto">
       <div className="w-full p-6 flex flex-col items-center justify-center min-h-full">
@@ -736,23 +737,7 @@ const FlashcardLearningPlatform = () => {
     />
   );
 
-  const renderFlashcards = () => {
-    const cardsToShow = selectedDifficulty 
-      ? getFilteredFlashcards(selectedDifficulty)
-      : flashcards;
 
-    return (
-      <div className="grid gap-4">
-        {cardsToShow.map(card => (
-          <div key={card.id} className="p-4 border rounded">
-            <h3>Question: {card.question}</h3>
-            <p>Difficulty: {card.difficulty}</p>
-            {/* Add more card details as needed */}
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   return (
     <div className="h-screen bg-gray-50 overflow-hidden">
@@ -761,7 +746,7 @@ const FlashcardLearningPlatform = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="border-b border-gray-200 p-4 bg-white shadow-sm">
             <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold">Flashcard Learning Platform</h1>
+              <div></div>
               <div className="space-x-4">
                 <button 
                   onClick={() => setActiveView('home')}
